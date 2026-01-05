@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier Bundles | Unlock Your Device</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #c084fc, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Roulette Container */
+        .roulette-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: 220px;
+            background: #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #334155;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2) inset;
+            margin: 0 auto;
+        }
+
+        .roulette-track {
+            display: flex;
+            height: 100%;
+            align-items: center;
+            /* Will be animated via JS */
+            will-change: transform;
+        }
+
+        /* The center line marker */
+        .marker {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #eab308;
+            z-index: 10;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px #eab308;
+        }
+
+        .marker::after {
+            content: '▼';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #eab308;
+            font-size: 20px;
+        }
+
+        .marker::before {
+            content: '▲';
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #eab308;
+            font-size: 20px;
+        }
+
+        /* Individual Card */
+        .card {
+            min-width: 180px;
+            height: 160px;
+            background: #0f172a;
+            margin: 0 4px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-bottom: 4px solid transparent;
+            transition: opacity 0.3s;
+        }
+
+        /* Rarity Borders */
+        .rarity-common { border-bottom-color: #94a3b8; } /* Silver/Grey */
+        .rarity-rare { border-bottom-color: #3b82f6; } /* Blue */
+        .rarity-mythical { border-bottom-color: #a855f7; } /* Purple */
+        .rarity-legendary { border-bottom-color: #eab308; } /* Gold */
+
+        .card img {
+            max-height: 100px;
+            max-width: 80%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .card-name {
+            font-size: 14px;
+            margin-top: 10px;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* Fade overlay on sides */
+        .fade-overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 150px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .fade-left {
+            left: 0;
+            background: linear-gradient(to right, #0f172a, transparent);
+        }
+        .fade-right {
+            right: 0;
+            background: linear-gradient(to left, #0f172a, transparent);
+        }
+
+        /* Modal */
+        .modal {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Glow animation for the button */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px #6366f1; }
+            50% { box-shadow: 0 0 25px #6366f1; }
+        }
+        .glow-btn {
+            animation: pulse-glow 2s infinite;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Delivery Animation Styles */
+        .delivery-overlay {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        .delivery-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .road-container {
+            width: 100%;
+            position: relative;
+            height: 100px;
+            overflow: hidden;
+            margin-top: 40px;
+        }
+        
+        .road {
+            width: 100%;
+            height: 2px;
+            background: #334155;
+            position: absolute;
+            bottom: 20px;
+        }
+        
+        .truck-icon {
+            font-size: 64px;
+            color: #6366f1; /* Indigo */
+            position: absolute;
+            bottom: 20px;
+            left: -150px;
+            filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
+        }
+
+        .animate-drive {
+            animation: driveAcross 4s linear forwards;
+        }
+
+        @keyframes driveAcross {
+            0% { left: -150px; }
+            10% { transform: rotate(-2deg); }
+            50% { left: 50%; transform: rotate(0deg); }
+            60% { transform: rotate(1deg); }
+            100% { left: 110%; }
+        }
+
+        .package-message {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease;
+        }
+        .package-message.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Form Input Styles */
+        .input-field {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-field:focus {
+            border-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="w-full p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-20">
+        <div class="text-2xl font-bold tracking-widest uppercase">
+            <i class="fa-solid fa-box-open text-indigo-500 mr-2"></i>
+            Premier<span class="text-indigo-500">Bundles</span>
+        </div>
+        <div class="text-sm font-semibold text-slate-400">
+            LOGGED IN AS: <span class="text-white">GUEST</span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 relative">
+        
+        <!-- Background Elements -->
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px]"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px]"></div>
+        </div>
+
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 uppercase tracking-tighter">
+                Test Your <span class="gradient-text">Luck</span>
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl max-w-xl mx-auto">
+                The ultimate tech package awaits. Spin the wheel to reveal your complimentary upgrade.
+            </p>
+        </div>
+
+        <!-- The Roulette -->
+        <div class="roulette-wrapper mb-10">
+            <div class="marker"></div>
+            <div class="fade-overlay fade-left"></div>
+            <div class="fade-overlay fade-right"></div>
+            
+            <div class="roulette-track" id="track">
+                <!-- Javascript will populate cards here -->
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex flex-col items-center gap-4">
+            <button id="spinBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-12 rounded-sm text-xl uppercase tracking-widest transition-all glow-btn relative overflow-hidden group">
+                <span class="relative z-10">Open Bundle</span>
+                <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
+            </button>
+            <p id="statusText" class="text-slate-500 text-sm tracking-wide uppercase mt-2">Ready to initiate</p>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="mt-16 grid grid-cols-3 gap-8 text-center opacity-50">
+            <div>
+                <i class="fa-solid fa-check-circle text-2xl mb-2 text-green-500"></i>
+                <p class="text-xs uppercase">Verified Authentic</p>
+            </div>
+            <div>
+                <i class="fa-solid fa-truck-fast text-2xl mb-2 text-blue-500"></i>
+                <p class="text-xs uppercase">Instant Shipping</p>
+            </div>
+            <div>
+                <i class="fa-solid fa-shield-halved text-2xl mb-2 text-purple-500"></i>
+                <p class="text-xs uppercase">Secure Claim</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full p-6 border-t border-slate-800 text-center text-slate-600 text-sm">
+        <p>&copy; PREMIER BUNDLES. ALL RIGHTS RESERVED.</p>
+    </footer>
+
+    <!-- Result Modal (Step 1) -->
+    <div id="resultModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 p-8 rounded-lg max-w-md w-full text-center relative shadow-2xl transform scale-100 transition-transform">
+            <!-- Confetti/Light effect background -->
+            <div class="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-lg pointer-events-none"></div>
+
+            <h2 class="text-3xl font-bold text-white mb-2 uppercase italic">Item Acquired!</h2>
+            <div class="w-full h-px bg-slate-700 mb-6"></div>
+
+            <div class="flex justify-center mb-6 relative">
+                <div class="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full"></div>
+                <img id="modalImage" src="" alt="Won Item" class="w-48 relative z-10 drop-shadow-2xl">
+            </div>
+
+            <h3 id="modalTitle" class="text-2xl font-bold text-yellow-400 mb-2 uppercase"></h3>
+            <p class="text-slate-400 mb-8 text-sm">Condition: Factory New</p>
+
+            <button onclick="openShippingModal()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded uppercase tracking-wider transition-colors">
+                Add to Inventory
+            </button>
+        </div>
+    </div>
+
+    <!-- Shipping Form Modal (Step 2) -->
+    <div id="shippingModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 p-8 rounded-lg max-w-md w-full relative shadow-2xl">
+            <h2 class="text-2xl font-bold text-white mb-4 uppercase text-center"><i class="fa-solid fa-truck-fast mr-2 text-indigo-500"></i> Shipping Details</h2>
+            <p class="text-slate-400 text-sm text-center mb-6">Enter destination for your unlocked bundle.</p>
+            
+            <form id="shippingForm" onsubmit="handleShippingSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase text-slate-500 mb-1">Full Name</label>
+                    <input type="text" required class="input-field" placeholder="John Doe" value="Mark">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase text-slate-500 mb-1">Street Address</label>
+                    <input type="text" required class="input-field" placeholder="123 Tech Blvd" value="11 CAPANO DR">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs uppercase text-slate-500 mb-1">City</label>
+                        <input type="text" required class="input-field" placeholder="Cyber City" value="NEWARK, DE">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase text-slate-500 mb-1">Zip Code</label>
+                        <input type="text" required class="input-field" placeholder="00000" value="19702-1848">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 mt-4 rounded uppercase tracking-wider transition-colors shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+                    Confirm Delivery
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delivery Animation Overlay (Step 3) -->
+    <div id="deliveryOverlay" class="delivery-overlay">
+        <div class="text-center package-message" id="packageStatus">
+            <h2 class="text-4xl font-bold text-white mb-2 uppercase">Dispatching...</h2>
+            <p class="text-indigo-400 uppercase tracking-widest text-sm">Order Processing</p>
+        </div>
+
+        <div class="road-container">
+            <div class="road"></div>
+            <i id="truckIcon" class="fa-solid fa-truck-fast truck-icon"></i>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const ITEMS = [
+            {
+                id: 'lavender',
+                name: 'Pro - Lavender',
+                img: 'https://i.ibb.co/qLr2yf19/17pro-Lavander-1.png',
+                rarity: 'rare' // Blue
+            },
+            {
+                id: 'sage',
+                name: 'Pro - Sage',
+                img: 'https://i.ibb.co/xKWg0R27/17pro-Sage-1.png',
+                rarity: 'rare' // Blue
+            },
+            {
+                id: 'cosmic',
+                name: 'Max - Cosmic Orange',
+                img: 'https://i.ibb.co/0y4ZVXQD/17pro-Max-Cosmic-Orange-1.png',
+                rarity: 'legendary' // Gold
+            },
+            {
+                id: 'blue',
+                name: 'Max - Deep Blue',
+                img: 'https://i.ibb.co/hRgw1wkq/17pro-Max-Deep-Blue-1.png',
+                rarity: 'mythical' // Purple
+            },
+            {
+                id: 'silver',
+                name: 'Max - Silver',
+                img: 'https://i.ibb.co/nM1TBYBQ/17pro-Max-Silver-1.png',
+                rarity: 'common' // Grey/Silver
+            }
+        ];
+
+        // Constants for the animation
+        const CARD_WIDTH = 188; // 180px width + 8px margin
+        const VISIBLE_CARDS = 5; // How many fit on screen roughly? used for centering math
+        const TOTAL_CARDS_GENERATED = 80;
+        const WINNING_INDEX_MIN = 60; // Land somewhere late in the strip
+        const WINNING_INDEX_MAX = 70;
+
+        // State
+        let isSpinning = false;
+        const track = document.getElementById('track');
+        const spinBtn = document.getElementById('spinBtn');
+        const statusText = document.getElementById('statusText');
+        const resultModal = document.getElementById('resultModal');
+        const shippingModal = document.getElementById('shippingModal');
+        const deliveryOverlay = document.getElementById('deliveryOverlay');
+        const truckIcon = document.getElementById('truckIcon');
+        const packageStatus = document.getElementById('packageStatus');
+
+        // --- Initialization ---
+        function init() {
+            generateStrip();
+        }
+
+        function generateStrip() {
+            track.innerHTML = '';
+            
+            // We generate a long strip of random items
+            for (let i = 0; i < TOTAL_CARDS_GENERATED; i++) {
+                const randomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                createCard(randomItem);
+            }
+        }
+
+        function createCard(item) {
+            const el = document.createElement('div');
+            el.className = `card rarity-${item.rarity}`;
+            
+            el.innerHTML = `
+                <img src="${item.img}" alt="${item.name}">
+                <div class="card-name text-${getRarityColor(item.rarity)}">${item.name}</div>
+            `;
+            track.appendChild(el);
+        }
+
+        function getRarityColor(rarity) {
+            switch(rarity) {
+                case 'legendary': return 'yellow-400';
+                case 'mythical': return 'purple-400';
+                case 'rare': return 'blue-400';
+                default: return 'slate-300';
+            }
+        }
+
+        // --- Logic ---
+        spinBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            startSpin();
+        });
+
+        function startSpin() {
+            isSpinning = true;
+            spinBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            statusText.textContent = "Selecting bundle...";
+            
+            // 1. Pick a random winning index near the end
+            const winIndex = Math.floor(Math.random() * (WINNING_INDEX_MAX - WINNING_INDEX_MIN + 1)) + WINNING_INDEX_MIN;
+            
+            // 2. Identify the item at that index (we need to know what we won to show in modal)
+            const allCards = track.querySelectorAll('.card');
+            const winningCard = allCards[winIndex];
+            const winningImg = winningCard.querySelector('img').src;
+            const winningName = winningCard.querySelector('.card-name').textContent;
+
+            // 3. Calculate scroll distance
+            const wrapperWidth = track.parentElement.offsetWidth;
+            const jitter = Math.floor(Math.random() * (CARD_WIDTH - 40)) - (CARD_WIDTH / 2 - 20); 
+            const positionToLand = (winIndex * CARD_WIDTH) - (wrapperWidth / 2) + (CARD_WIDTH / 2) + jitter;
+
+            // 4. Apply CSS Transition
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0px)';
+            track.offsetHeight; // Force reflow
+
+            track.style.transition = 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)';
+            track.style.transform = `translateX(-${positionToLand}px)`;
+
+            // 5. Handle End of Spin
+            setTimeout(() => {
+                showResult(winningName, winningImg);
+                isSpinning = false;
+                spinBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                statusText.textContent = "Bundle Unlocked";
+            }, 6000); 
+        }
+
+        function showResult(name, imgUrl) {
+            document.getElementById('modalTitle').textContent = name;
+            document.getElementById('modalImage').src = imgUrl;
+            resultModal.classList.add('active');
+            
+            // Trigger confetti or shake effect
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+        }
+
+        // --- Modal & Form Logic ---
+
+        window.openShippingModal = function() {
+            resultModal.classList.remove('active');
+            shippingModal.classList.add('active');
+        }
+
+        window.handleShippingSubmit = function(e) {
+            e.preventDefault();
+            // In a real app, you'd send data here.
+            shippingModal.classList.remove('active');
+            playDeliveryAnimation();
+        }
+
+        function playDeliveryAnimation() {
+            deliveryOverlay.classList.add('active');
+            packageStatus.classList.add('visible');
+            
+            // Start truck
+            setTimeout(() => {
+                truckIcon.classList.add('animate-drive');
+            }, 100);
+
+            // Change status text mid-way
+            setTimeout(() => {
+                packageStatus.innerHTML = `
+                    <h2 class="text-5xl font-bold text-green-500 mb-2 uppercase italic">Success!</h2>
+                    <p class="text-white uppercase tracking-widest text-lg">Bundle En Route</p>
+                `;
+            }, 2500);
+
+            // Finish and reset
+            setTimeout(() => {
+                deliveryOverlay.classList.remove('active');
+                
+                // Cleanup classes for next time
+                setTimeout(() => {
+                    resetGame();
+                }, 500);
+            }, 5000);
+        }
+
+        function resetGame() {
+            truckIcon.classList.remove('animate-drive');
+            packageStatus.classList.remove('visible');
+            packageStatus.innerHTML = `
+                <h2 class="text-4xl font-bold text-white mb-2 uppercase">Dispatching...</h2>
+                <p class="text-indigo-400 uppercase tracking-widest text-sm">Order Processing</p>
+            `;
+            
+            document.getElementById('shippingForm').reset();
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
+            statusText.textContent = "Ready to initiate";
+            generateStrip();
+        }
+
+        // Handle resize to keep math correct
+        window.addEventListener('resize', () => {
+            if(!isSpinning) {
+                track.style.transition = 'none';
+                track.style.transform = 'translateX(0)';
+            }
+        });
+
+        // Initialize on load
+        init();
+
+    </script>
+</body>
+</html>
